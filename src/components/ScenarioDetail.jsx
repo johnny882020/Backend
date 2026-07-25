@@ -34,10 +34,10 @@ export function ScenarioDetail({ scenario, onBack }) {
       </button>
 
       <div>
-        <div className="text-xs font-medium uppercase tracking-wide text-teal-700">
+        <div className="text-xs font-medium uppercase tracking-wide text-brand-teal">
           {scenario.cancer_type}
         </div>
-        <h2 className="text-2xl font-semibold text-slate-900 mt-0.5">{scenario.name}</h2>
+        <h2 className="text-2xl font-display font-semibold text-brand-ink mt-0.5">{scenario.name}</h2>
         <p className="text-sm text-slate-500 mt-1">{scenario.mutation_context}</p>
       </div>
 
@@ -54,7 +54,9 @@ export function ScenarioDetail({ scenario, onBack }) {
         <div className="grid lg:grid-cols-3 gap-5 items-start">
           <div className="lg:col-span-2 space-y-5">
             <DrugComparisonTable drugs={drugs} selectedDrugId={selectedDrugId} onSelect={setSelectedDrugId} />
-            {selectedDrug && <DrugDetail drug={selectedDrug} scenario={scenario} />}
+            {selectedDrug && (
+              <DrugDetail drug={selectedDrug} scenario={scenario} scenarioDrugs={drugs} />
+            )}
           </div>
           <Card className="lg:sticky lg:top-6 h-[560px]">
             <AdvisorChat scenario={scenario} drugs={drugs} />

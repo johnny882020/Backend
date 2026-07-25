@@ -17,19 +17,19 @@ export function ScenarioList({ scenarios, isLoading, onSelect }) {
       {scenarios.map((scenario) => (
         <Card
           key={scenario.id}
-          className="p-5 cursor-pointer hover:shadow-md hover:border-teal-200 transition-all group"
+          className="p-5 cursor-pointer hover:shadow-lg hover:shadow-brand-teal/5 hover:border-brand-teal/30 hover:-translate-y-0.5 transition-all group"
         >
           <button className="w-full text-left" onClick={() => onSelect(scenario.id)}>
             <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-2 text-teal-700">
+              <div className="flex items-center gap-2 text-brand-teal">
                 <Dna className="w-4 h-4" />
                 <span className="text-xs font-medium uppercase tracking-wide">
                   {scenario.cancer_type}
                 </span>
               </div>
-              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-teal-600 group-hover:translate-x-0.5 transition-all" />
+              <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-brand-teal group-hover:translate-x-0.5 transition-all" />
             </div>
-            <h3 className="mt-2 text-lg font-semibold text-slate-900">{scenario.name}</h3>
+            <h3 className="mt-2 text-lg font-display font-semibold text-brand-ink">{scenario.name}</h3>
             <p className="mt-1 text-sm text-slate-500">{scenario.mutation_context}</p>
             <p className="mt-3 text-xs text-slate-400">
               Target: {scenario.target_name} &middot; PDB {scenario.target_pdb_id}

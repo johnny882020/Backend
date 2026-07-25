@@ -2,15 +2,27 @@ import { Badge } from '@/components/ui/badge';
 
 const SEVERITY_VARIANT = { common: 'default', serious: 'amber', black_box: 'red' };
 
-function ScoreCell({ value, suffix = '', decimals = 2 }) {
+function ScoreCell({ value, decimals = 2 }) {
+  if (value === null || value === undefined) {
+    return <span className="text-slate-300 text-xs">pending</span>;
+  }
+  return <span className="font-mono text-sm text-slate-800">{value.toFixed(decimals)}</span>;
+}
+
+function CompositeCell({ value }) {
   if (value === null || value === undefined) {
     return <span className="text-slate-300 text-xs">pending</span>;
   }
   return (
-    <span className="font-mono text-sm text-slate-800">
-      {value.toFixed(decimals)}
-      {suffix}
-    </span>
+    <div className="flex items-center gap-2 min-w-[92px]">
+      <div className="h-1.5 w-14 rounded-full bg-brand-tealLight overflow-hidden shrink-0">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-brand-teal to-brand-blue"
+          style={{ width: `${value}%` }}
+        />
+      </div>
+      <span className="font-mono text-sm text-slate-800">{value}</span>
+    </div>
   );
 }
 
@@ -36,7 +48,7 @@ export function DrugComparisonTable({ drugs, selectedDrugId, onSelect }) {
               key={drug.id}
               onClick={() => onSelect(drug.id)}
               className={`cursor-pointer border-t border-slate-100 transition-colors ${
-                selectedDrugId === drug.id ? 'bg-teal-50/60' : 'hover:bg-slate-50'
+                selectedDrugId === drug.id ? 'bg-brand-tealLight/60' : 'hover:bg-slate-50'
               }`}
             >
               <td className="px-4 py-3">
@@ -46,7 +58,7 @@ export function DrugComparisonTable({ drugs, selectedDrugId, onSelect }) {
               <td className="px-4 py-3 text-slate-600">{drug.drug_class}</td>
               <td className="px-4 py-3"><ScoreCell value={drug.docking_confidence} /></td>
               <td className="px-4 py-3"><ScoreCell value={drug.affinity_pic50} /></td>
-              <td className="px-4 py-3"><ScoreCell value={drug.composite_score} decimals={0} /></td>
+              <td className="px-4 py-3"><CompositeCell value={drug.composite_score} /></td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
                   {(drug.adverse_effects ?? []).slice(0, 2).map((ae) => (
