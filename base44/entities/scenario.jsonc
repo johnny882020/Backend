@@ -1,0 +1,56 @@
+// A curated cancer-type + molecular-target scenario.
+// Target sequence is fetched from UniProt (public, no API key) by the seed
+// script, not hand-typed. The receptor structure itself is not stored here —
+// target_pdb_id is resolved live against RCSB PDB (files.rcsb.org) by both
+// the docking backend function and the frontend 3D viewer, avoiding large
+// blob storage entirely.
+{
+  "name": "Scenario",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Display name, e.g. 'EGFR-Mutant Non-Small Cell Lung Cancer'"
+    },
+    "cancer_type": {
+      "type": "string",
+      "description": "Cancer type, e.g. 'Non-Small Cell Lung Cancer (NSCLC)'"
+    },
+    "mutation_context": {
+      "type": "string",
+      "description": "Driver mutation(s) that define this scenario, e.g. 'EGFR exon 19 deletion / L858R'"
+    },
+    "target_name": {
+      "type": "string",
+      "description": "Molecular target, e.g. 'EGFR Tyrosine Kinase Domain'"
+    },
+    "target_pdb_id": {
+      "type": "string",
+      "description": "RCSB PDB ID used as the docking receptor structure, e.g. '1M17'"
+    },
+    "target_uniprot_id": {
+      "type": "string",
+      "description": "UniProt accession for the target protein"
+    },
+    "target_sequence": {
+      "type": "string",
+      "description": "Target protein sequence fetched from UniProt"
+    },
+    "target_summary": {
+      "type": "string",
+      "format": "richtext",
+      "description": "Plain-language explanation of the target's biological role in this cancer"
+    },
+    "display_order": {
+      "type": "integer",
+      "description": "Order in which scenarios are listed in the UI"
+    }
+  },
+  "required": ["name", "cancer_type", "target_name", "target_pdb_id"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": true,
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

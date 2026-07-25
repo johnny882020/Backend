@@ -1,0 +1,101 @@
+// A candidate/approved drug evaluated against a Scenario's molecular target.
+// SMILES are fetched from PubChem by the seed script. Docking/affinity fields
+// (docking_confidence, best_pose_sdf, affinity_pic50, affinity_probability_binding,
+// composite_score) are populated by the computeDocking backend function once an
+// NVIDIA API key is configured, and are null until then.
+{
+  "name": "Drug",
+  "type": "object",
+  "properties": {
+    "scenario_id": {
+      "type": "string",
+      "description": "ID of the Scenario this drug is evaluated against"
+    },
+    "name": {
+      "type": "string",
+      "description": "Generic drug name, e.g. 'Osimertinib'"
+    },
+    "brand_name": {
+      "type": "string",
+      "description": "Brand name, e.g. 'Tagrisso'"
+    },
+    "drug_class": {
+      "type": "string",
+      "description": "Drug class/generation, e.g. '3rd-generation EGFR tyrosine kinase inhibitor'"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": ["fda_approved", "investigational"],
+      "default": "fda_approved",
+      "description": "Regulatory status"
+    },
+    "pubchem_cid": {
+      "type": "string",
+      "description": "PubChem Compound ID"
+    },
+    "smiles": {
+      "type": "string",
+      "description": "Canonical SMILES fetched from PubChem"
+    },
+    "mechanism_summary": {
+      "type": "string",
+      "format": "richtext",
+      "description": "Plain-language mechanism of action"
+    },
+    "adverse_effects": {
+      "type": "array",
+      "description": "Known adverse effects with severity",
+      "items": {
+        "type": "object",
+        "properties": {
+          "effect": { "type": "string" },
+          "severity": {
+            "type": "string",
+            "enum": ["common", "serious", "black_box"]
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    },
+    "black_box_warning": {
+      "type": "string",
+      "description": "FDA black box warning text, if any"
+    },
+    "docking_confidence": {
+      "type": "number",
+      "description": "DiffDock best-pose confidence score (M2, computed)"
+    },
+    "best_pose_sdf": {
+      "type": "string",
+      "description": "SDF text of the top-ranked DiffDock binding pose (M2, computed)"
+    },
+    "affinity_pic50": {
+      "type": "number",
+      "description": "Boltz2-predicted pIC50 binding affinity (M2, computed)"
+    },
+    "affinity_probability_binding": {
+      "type": "number",
+      "description": "Boltz2-predicted probability of binding (M2, computed)"
+    },
+    "composite_score": {
+      "type": "number",
+      "description": "0-100 transparent composite of affinity, docking confidence, and adverse-effect burden (M2, computed)"
+    },
+    "data_source": {
+      "type": "string",
+      "description": "Citation/provenance note for this record"
+    },
+    "computed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when docking/affinity fields were last computed"
+    }
+  },
+  "required": ["scenario_id", "name"],
+  "rls": {
+    "create": { "user_condition": { "role": "admin" } },
+    "read": true,
+    "update": { "user_condition": { "role": "admin" } },
+    "delete": { "user_condition": { "role": "admin" } }
+  }
+}

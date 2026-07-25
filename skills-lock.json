@@ -30,6 +30,24 @@
       "sourceType": "github",
       "skillPath": "skills/base44-troubleshooter/SKILL.md",
       "computedHash": "3adc31fd75eb84ff6c596a717d5752d63b6863debbefb13d9cdefa05a250378c"
+    },
+    "boltz2-nim": {
+      "source": "NVIDIA-BioNeMo/bionemo-agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "plugins/bionemo-agent-toolkit/skills/boltz2-nim/SKILL.md",
+      "computedHash": "f4024a72a126d1d5bd8e423f8aa4b0b296583ea752665a0709402944a3ebfeb7"
+    },
+    "diffdock-nim": {
+      "source": "NVIDIA-BioNeMo/bionemo-agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "plugins/bionemo-agent-toolkit/skills/diffdock-nim/SKILL.md",
+      "computedHash": "c466c778f6e52794f2cdbd490f4a4f6ca392994b40eac510a5c1d825bb58480d"
+    },
+    "drug-discovery-pipeline": {
+      "source": "NVIDIA-BioNeMo/bionemo-agent-toolkit",
+      "sourceType": "github",
+      "skillPath": "plugins/bionemo-agent-toolkit/skills/drug-discovery-pipeline/SKILL.md",
+      "computedHash": "11198b9e151f0dc4959dbd46cc2f35c94e678f92078d95a84eb91b88ab650f9c"
     }
   }
 }
