@@ -324,13 +324,18 @@ async function validatePdbId(pdbId: string): Promise<{ title: string }> {
 async function fetchPubChemSmiles(drugName: string): Promise<{ cid: string; smiles: string }> {
   const url = `https://pubchem.ncbi.nlm.nih.gov/rest/pug/compound/name/${encodeURIComponent(
     drugName
-  )}/property/CanonicalSMILES/JSON`;
+  )}/property/IsomericSMILES,CanonicalSMILES/JSON`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`PubChem lookup failed for ${drugName}: ${res.status}`);
   const data = await res.json();
   const prop = data?.PropertyTable?.Properties?.[0];
   if (!prop) throw new Error(`PubChem returned no properties for ${drugName}`);
-  return { cid: String(prop.CID), smiles: prop.CanonicalSMILES };
+  // PubChem's REST API has renamed these properties across versions
+  // (e.g. CanonicalSMILES -> ConnectivitySMILES); check all known aliases
+  // defensively rather than trusting the requested property name back.
+  const smiles = prop.IsomericSMILES ?? prop.CanonicalSMILES ?? prop.ConnectivitySMILES ?? prop.SMILES;
+  if (!smiles) throw new Error(`PubChem returned no SMILES for ${drugName}: ${JSON.stringify(prop)}`);
+  return { cid: String(prop.CID), smiles };
 }
 
 async function main() {
