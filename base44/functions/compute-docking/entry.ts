@@ -3,9 +3,7 @@
 // hosted NIMs, and writes the results back onto the Drug entity.
 import { createClientFromRequest } from "npm:@base44/sdk";
 import { fetchReceptor } from "../../shared/pdb.ts";
-
-const DIFFDOCK_URL = "https://health.api.nvidia.com/v1/biology/mit/diffdock";
-const BOLTZ2_URL = "https://health.api.nvidia.com/v1/biology/mit/boltz2/predict";
+import { runDiffDock, runBoltz2Affinity } from "../../shared/docking.ts";
 
 interface RequestBody {
   drugId: string;
@@ -30,61 +28,12 @@ Deno.serve(async (req) => {
     if (!scenario) return Response.json({ error: `Scenario ${drug.scenario_id} not found` }, { status: 404 });
 
     const receptor = await fetchReceptor(scenario.target_pdb_id);
-    const headers = {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${NGC_API_KEY}`,
-    };
-
-    const diffdockRes = await fetch(DIFFDOCK_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        protein: receptor.atomText,
-        ligand: drug.smiles,
-        ligand_file_type: "txt",
-        num_poses: 10,
-        time_divisions: 20,
-        steps: 18,
-        save_trajectory: false,
-      }),
-    });
-    if (!diffdockRes.ok) {
-      const detail = await diffdockRes.text();
-      return Response.json(
-        { error: `DiffDock failed (${diffdockRes.status}): ${detail.slice(0, 500)}` },
-        { status: 502 }
-      );
-    }
-    const diffdockResult = await diffdockRes.json();
-    const bestPoseSdf: string = diffdockResult.ligand_positions?.[0];
-    const dockingConfidence: number = diffdockResult.position_confidence?.[0];
-    if (bestPoseSdf === undefined || dockingConfidence === undefined) {
-      return Response.json({ error: "DiffDock returned no poses" }, { status: 502 });
-    }
-
-    const boltzRes = await fetch(BOLTZ2_URL, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        polymers: [{ id: "A", molecule_type: "protein", sequence: receptor.sequence }],
-        ligands: [{ id: "L1", smiles: drug.smiles, predict_affinity: true }],
-        recycling_steps: 3,
-        sampling_steps: 50,
-        diffusion_samples: 1,
-        output_format: "mmcif",
-      }),
-    });
-    if (!boltzRes.ok) {
-      const detail = await boltzRes.text();
-      return Response.json(
-        { error: `Boltz2 failed (${boltzRes.status}): ${detail.slice(0, 500)}` },
-        { status: 502 }
-      );
-    }
-    const boltzResult = await boltzRes.json();
-    const affinity = boltzResult.affinities?.L1;
-    const affinityPic50: number | null = affinity?.affinity_pic50?.[0] ?? null;
-    const affinityProbabilityBinding: number | null = affinity?.affinity_probability_binary?.[0] ?? null;
+    const { bestPoseSdf, dockingConfidence } = await runDiffDock(NGC_API_KEY, receptor.atomText, drug.smiles);
+    const { affinityPic50, affinityProbabilityBinding } = await runBoltz2Affinity(
+      NGC_API_KEY,
+      receptor.sequence,
+      drug.smiles
+    );
 
     const updated = await base44.asServiceRole.entities.Drug.update(drugId, {
       docking_confidence: dockingConfidence,

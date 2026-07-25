@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Base44Logo } from '@/components/Base44Logo';
 import { OncoBindLogo } from '@/components/OncoBindLogo';
 import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import { FirstRunExplainer } from '@/components/FirstRunExplainer';
 import { ScenarioList } from '@/components/ScenarioList';
 import { ScenarioDetail } from '@/components/ScenarioDetail';
 
@@ -62,6 +63,7 @@ export default function App() {
                 in prescribing information.
               </p>
             </div>
+            <FirstRunExplainer />
             <DisclaimerBanner />
             <ScenarioList scenarios={scenarios} isLoading={isLoading} onSelect={setSelectedScenarioId} />
           </>

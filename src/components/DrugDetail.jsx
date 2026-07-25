@@ -84,6 +84,13 @@ export function DrugDetail({ drug, scenario, scenarioDrugs = [] }) {
           )}
 
           <p className="mt-4 text-[11px] text-slate-400">{drug.data_source}</p>
+          {drug.computed_at && (
+            <p className="mt-1 text-[11px] text-slate-400">
+              Binding pose &amp; affinity computed {new Date(drug.computed_at).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric',
+              })} via DiffDock 2.2.0 + Boltz2 1.6.0 (NVIDIA BioNeMo).
+            </p>
+          )}
         </div>
       </div>
     </Card>

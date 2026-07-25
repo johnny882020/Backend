@@ -9,9 +9,13 @@ function ScoreCell({ value, decimals = 2 }) {
   return <span className="font-mono text-sm text-slate-800">{value.toFixed(decimals)}</span>;
 }
 
-function CompositeCell({ value }) {
+function CompositeCell({ value, isCandidate }) {
   if (value === null || value === undefined) {
-    return <span className="text-slate-300 text-xs">pending</span>;
+    return (
+      <span className="text-slate-300 text-xs" title={isCandidate ? 'No curated adverse-effect data to weigh safety — not scored' : undefined}>
+        {isCandidate ? 'n/a' : 'pending'}
+      </span>
+    );
   }
   return (
     <div className="flex items-center gap-2 min-w-[92px]">
@@ -52,20 +56,27 @@ export function DrugComparisonTable({ drugs, selectedDrugId, onSelect }) {
               }`}
             >
               <td className="px-4 py-3">
-                <div className="font-medium text-slate-900">{drug.name}</div>
+                <div className="font-medium text-slate-900 flex items-center gap-1.5">
+                  {drug.name}
+                  {drug.is_candidate && <Badge variant="amber">this session</Badge>}
+                </div>
                 <div className="text-xs text-slate-400">{drug.brand_name}</div>
               </td>
               <td className="px-4 py-3 text-slate-600">{drug.drug_class}</td>
               <td className="px-4 py-3"><ScoreCell value={drug.docking_confidence} /></td>
               <td className="px-4 py-3"><ScoreCell value={drug.affinity_pic50} /></td>
-              <td className="px-4 py-3"><CompositeCell value={drug.composite_score} /></td>
+              <td className="px-4 py-3"><CompositeCell value={drug.composite_score} isCandidate={drug.is_candidate} /></td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
-                  {(drug.adverse_effects ?? []).slice(0, 2).map((ae) => (
-                    <Badge key={ae.effect} variant={SEVERITY_VARIANT[ae.severity] ?? 'default'}>
-                      {ae.effect}
-                    </Badge>
-                  ))}
+                  {drug.is_candidate ? (
+                    <span className="text-xs text-slate-300">not available</span>
+                  ) : (
+                    (drug.adverse_effects ?? []).slice(0, 2).map((ae) => (
+                      <Badge key={ae.effect} variant={SEVERITY_VARIANT[ae.severity] ?? 'default'}>
+                        {ae.effect}
+                      </Badge>
+                    ))
+                  )}
                 </div>
               </td>
             </tr>

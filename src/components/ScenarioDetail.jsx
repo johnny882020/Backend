@@ -6,6 +6,7 @@ import { DrugComparisonTable } from '@/components/DrugComparisonTable';
 import { DrugDetail } from '@/components/DrugDetail';
 import { AdvisorChat } from '@/components/AdvisorChat';
 import { DisclaimerBanner } from '@/components/DisclaimerBanner';
+import { CandidateDrugForm } from '@/components/CandidateDrugForm';
 
 export function ScenarioDetail({ scenario, onBack }) {
   const [drugs, setDrugs] = useState([]);
@@ -23,6 +24,11 @@ export function ScenarioDetail({ scenario, onBack }) {
   }, [scenario.id]);
 
   const selectedDrug = drugs.find((d) => d.id === selectedDrugId);
+
+  const handleCandidateAdded = (candidate) => {
+    setDrugs((prev) => [...prev, candidate]);
+    setSelectedDrugId(candidate.id);
+  };
 
   return (
     <div className="space-y-5">
@@ -54,6 +60,7 @@ export function ScenarioDetail({ scenario, onBack }) {
         <div className="grid lg:grid-cols-3 gap-5 items-start">
           <div className="lg:col-span-2 space-y-5">
             <DrugComparisonTable drugs={drugs} selectedDrugId={selectedDrugId} onSelect={setSelectedDrugId} />
+            <CandidateDrugForm scenario={scenario} onAdded={handleCandidateAdded} />
             {selectedDrug && (
               <DrugDetail drug={selectedDrug} scenario={scenario} scenarioDrugs={drugs} />
             )}

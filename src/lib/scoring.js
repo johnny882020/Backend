@@ -14,9 +14,18 @@ function minMaxNorm(values, value) {
   return (value - min) / (max - min);
 }
 
-/** Returns null if the drug or its scenario-mates don't have computed data yet. */
+/**
+ * Returns null if the drug or its scenario-mates don't have computed data
+ * yet, or if `drug` is a session-only candidate (never scored — no curated
+ * adverse-effect data exists to weigh safety, so a composite would be
+ * misleading, not just incomplete). Candidates are also excluded from the
+ * normalization pool so they can't skew curated drugs' scores.
+ */
 export function computeScoreBreakdown(drug, scenarioDrugs) {
-  const computed = scenarioDrugs.filter((d) => d.docking_confidence != null && d.affinity_pic50 != null);
+  if (drug.is_candidate) return null;
+  const computed = scenarioDrugs.filter(
+    (d) => !d.is_candidate && d.docking_confidence != null && d.affinity_pic50 != null
+  );
   if (computed.length === 0 || drug.docking_confidence == null || drug.affinity_pic50 == null) return null;
 
   const pic50s = computed.map((d) => d.affinity_pic50);
