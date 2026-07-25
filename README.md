@@ -36,6 +36,53 @@ kinase-domain target its therapies act on), OncoBind:
    report) to see a transparently-adjusted score, and generate a
    personalized, step-by-step decision report — printable as a PDF.
 
+## How to use OncoBind
+
+No account, sign-up, or installation needed — open a live link and start:
+
+- **Base44 hosting**: https://backend-f3b88536.base44.app
+- **Render**: https://oncobind.onrender.com
+
+**1. Pick a scenario.** The home screen lists five molecularly-defined cancer
+scenarios (e.g. "EGFR-Mutant Non-Small Cell Lung Cancer"). Each card shows the
+molecular target and its PDB structure ID. Click one to open it.
+
+**2. Read the target biology.** The scenario page opens with a plain-language
+summary of the molecular target and why it drives that cancer.
+
+**3. Compare the candidates.** The table lists every FDA-approved drug for
+that target, ranked by **composite score** — a transparent blend of predicted
+binding affinity, docking confidence, and adverse-effect burden (the exact
+formula is in [Composite score formula](docs/ARCHITECTURE.md#composite-score-formula)).
+Click any row to open its detail view: mechanism of action, adverse effects,
+a "why this score" breakdown, and a live 3D viewer showing the drug docked
+against the real target structure.
+
+**4. Ask the Oncology Advisor.** The chat panel on the right is grounded only
+in the data shown on that page — it won't invent numbers, and it explains its
+own scoring math if asked. No sign-in required.
+
+**5. Dock a drug that isn't on the list.** Type any drug name into "Dock a
+candidate drug not on this list" to run real DiffDock + Boltz2 computation
+against that scenario's target, live (typically under a minute). The result
+is shown only in your session — it isn't saved for other visitors.
+
+**6. Personalize for a patient.** Open "Patient context" to flag relevant
+clinical factors (cardiac history, hepatic/renal impairment, CNS
+involvement, prior TKI exposure) — or upload a lab report to have relevant
+flags derived automatically. The table re-ranks with a **patient-adjusted
+score**, and each drug's detail view shows exactly which flag matched which
+effect and by how much. **Use de-identified or synthetic example data only —
+see the on-screen warning; nothing here is saved to a shared record.**
+
+**7. Generate a decision report.** "Generate report" produces a step-by-step
+narrative — grounded in the same data, personalized if patient context is
+active — that you can print or save as a PDF via "Print / Save as PDF."
+
+Throughout, a persistent banner reminds that OncoBind is a research and
+education decision-support tool, not a diagnostic or prescribing device —
+see [Limitations](#limitations--disclaimers).
+
 ## Scenarios covered
 
 | Cancer scenario | Target | Candidate drugs |
