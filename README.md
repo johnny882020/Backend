@@ -11,7 +11,7 @@ computational chemistry, not static reference tables.
 > prescribing information, or institutional guidelines. See
 > [Limitations](#limitations--disclaimers).
 
-Live app: https://backend-f3b88536.base44.app
+Live app: https://backend-f3b88536.base44.app (Base44) &middot; https://oncobind.onrender.com (Render)
 
 ## What it does
 
@@ -29,7 +29,12 @@ kinase-domain target its therapies act on), OncoBind:
    relative to the other candidates for that same scenario.
 4. Lets the physician ask a grounded AI advisor *why* a drug scored the way
    it did — the advisor only cites data actually present in the app's
-   database, never invented numbers.
+   database, never invented numbers. No sign-in required.
+5. Runs the **same real docking pipeline live** for any drug not in the
+   curated list, typed in on the spot.
+6. Lets the physician flag patient-specific factors (or upload a lab
+   report) to see a transparently-adjusted score, and generate a
+   personalized, step-by-step decision report — printable as a PDF.
 
 ## Scenarios covered
 
@@ -41,44 +46,62 @@ kinase-domain target its therapies act on), OncoBind:
 | CML (BCR-ABL1+) | ABL1 kinase domain (PDB 2HYY) | Imatinib, Nilotinib, Dasatinib, Ponatinib |
 | ALK+ NSCLC | ALK kinase domain (PDB 2XP2) | Crizotinib, Alectinib, Lorlatinib |
 
-Target sequences come from UniProt, structures from RCSB PDB, and drug
-identifiers/SMILES from PubChem — fetched live by the seed script, not
-hand-typed. See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full
-data pipeline and the exact composite-score formula.
+...plus any drug a physician types into "Dock a candidate drug not on this
+list," docked live against the same target. Target sequences come from
+UniProt, structures from RCSB PDB, and drug identifiers/SMILES from
+PubChem — fetched live, not hand-typed. See
+[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for the full data pipeline,
+every backend function, and the exact scoring formulas.
 
 ## Tech stack
 
 - **Frontend**: React 18 + Vite, Tailwind CSS, [3Dmol.js](https://3dmol.org) for in-browser structure visualization
-- **Backend**: [Base44](https://base44.com) — entities (data model), a Deno backend function, and an AI agent, all defined as code in `base44/`
+- **Backend**: [Base44](https://base44.com) — entities (data model) and five Deno backend functions, all defined as code in `base44/`
+- **AI**: Base44's AI Gateway (Claude Sonnet — see note below) for the chat advisor, live-candidate descriptions, and personalized reports; all anonymous-capable, no login required
 - **Computational chemistry**: [NVIDIA BioNeMo](https://build.nvidia.com) hosted NIMs — DiffDock (docking) and Boltz2 (structure + affinity prediction)
 - **Public data sources**: RCSB PDB, UniProt, PubChem (all fetched live, no vendored/hardcoded biological data)
+
+> **Note on model choice**: Claude Opus is not available on this app's
+> current Base44 AI Gateway plan (confirmed by direct probing — Opus model
+> IDs return `model_not_found`, not a quota error). The app uses
+> `claude_sonnet_4_6`, the strongest model actually available on the
+> gateway.
 
 ## Project structure
 
 ```
 base44/
-├── config.jsonc                    # Base44 project config
+├── config.jsonc                      # Base44 project config
 ├── entities/
-│   ├── scenario.jsonc              # Cancer scenario + molecular target schema
-│   └── drug.jsonc                  # Candidate drug schema (MOA, adverse effects, computed scores)
+│   ├── scenario.jsonc                # Cancer scenario + molecular target schema
+│   └── drug.jsonc                    # Candidate drug schema (MOA, adverse effects, computed scores)
 ├── functions/
-│   └── compute-docking/entry.ts    # Calls DiffDock + Boltz2, writes results back to Drug
+│   ├── compute-docking/entry.ts      # Dock a curated Drug, persist results
+│   ├── dock-candidate/entry.ts       # Dock a user-typed drug live, session-only (not persisted)
+│   ├── oncology-chat/entry.ts        # Anonymous-capable grounded chat (AI Gateway)
+│   └── oncology-report/entry.ts      # Personalized step-by-step decision report (AI Gateway)
 ├── shared/
-│   └── pdb.ts                      # RCSB fetch + PDB→sequence parsing, shared by the function
-└── agents/
-    └── oncology_advisor.jsonc      # Read-only AI agent that explains scores/tradeoffs
+│   ├── pdb.ts                        # RCSB fetch + PDB→sequence parsing
+│   ├── docking.ts                    # DiffDock + Boltz2 calls, shared by both docking functions
+│   ├── pubchem.ts                    # Drug-name → SMILES resolution
+│   ├── oncology-prompt.ts            # Shared grounding/disclaimer system prompt
+│   └── patient-context.ts            # Server-side mirror of the patient-adjustment formula
+└── (no agents — the AI Gateway replaced the old agents-based chat; see ARCHITECTURE.md)
 
 scripts/
-├── seed.ts                         # Populates the 5 scenarios + 17 drugs from live public APIs
-└── compute-all.ts                  # Batch-runs compute-docking + the composite-score pass
+├── seed.ts                           # Populates the 5 scenarios + 17 drugs from live public APIs
+├── fix-smiles.ts                     # One-off backfill (see "Known issues" in ARCHITECTURE.md)
+└── compute-all.ts                    # Batch-runs compute-docking + the composite-score pass
 
 src/
-├── App.jsx                         # Top-level layout, scenario picker
-├── api/base44Client.js             # Base44 SDK client (dev-aware)
-├── components/                     # ScenarioList, ScenarioDetail, DrugComparisonTable,
-│                                    # DrugDetail, MoleculeViewer (3Dmol), AdvisorChat, ...
-└── lib/scoring.js                  # Client-side mirror of the composite-score formula
-                                     # (drives the "why this score" breakdown view)
+├── App.jsx                           # Top-level layout, scenario picker
+├── api/base44Client.js               # Base44 SDK client (dev-aware)
+├── components/                       # ScenarioList, ScenarioDetail, DrugComparisonTable,
+│                                      # DrugDetail, MoleculeViewer (3Dmol), AdvisorChat,
+│                                      # CandidateDrugForm, PatientContextPanel, DecisionReport, ...
+└── lib/
+    ├── scoring.js                    # Client-side mirror of the composite-score formula
+    └── patientContext.js             # Client-side mirror of the patient-adjustment formula
 ```
 
 ## Development
@@ -90,7 +113,7 @@ npx base44 dev        # local backend (localhost:4400) + frontend (localhost:517
 ```
 
 Re-seeding or re-running the docking pipeline against the **real** Base44
-backend (not the local dev emulator):
+backend (not the local dev emulator, which doesn't mirror secrets):
 
 ```bash
 cat scripts/seed.ts | npx base44 exec
@@ -106,10 +129,10 @@ npm run build
 npx base44 site deploy -y
 ```
 
-**Render** (static site, talks to the same Base44 backend over the network):
-this repo includes a `render.yaml` blueprint — connect the repo in the
-Render dashboard ("New +" → "Blueprint") and it will auto-configure the
-build (`npm ci && npm run build`, publish `./dist`).
+**Render** (Docker web service — see `Dockerfile`, which builds the Vite app
+and serves `dist/` with `serve`, listening on Render's injected `$PORT`):
+auto-deploys on push to `claude/base44-create-3yhg90`, configured via
+`render.yaml`.
 
 ## Limitations & disclaimers
 
@@ -117,12 +140,18 @@ build (`npm ci && npm run build`, publish `./dist`).
   general-purpose structure-prediction/docking models, not experimentally
   validated measurements. They are a reasonable comparative signal, not a
   clinical efficacy score.
-- The composite score is an explicit, transparent heuristic (documented in
-  `docs/ARCHITECTURE.md`) — it is intentionally *not* a black box, but it is
-  also not a substitute for trial data, NCCN guidelines, or a treating
-  physician's judgment.
-- Adverse-effect and mechanism-of-action text is a curated summary based on
-  FDA prescribing information and NCCN guidelines at the time of writing;
-  always verify against current labeling before clinical use.
+- The composite score and the patient-context adjustment are both explicit,
+  transparent heuristics (documented in `docs/ARCHITECTURE.md`) — neither is
+  a black box, but neither is a substitute for trial data, NCCN guidelines,
+  or a treating physician's judgment.
+- Adverse-effect and mechanism-of-action text for the 17 curated drugs is a
+  curated summary based on FDA prescribing information and NCCN guidelines
+  at the time of writing; text for live-docked candidate drugs is
+  AI-generated and explicitly labeled as such. Always verify against
+  current labeling before clinical use.
+- The patient-context feature is demo-safe by design: an explicit on-screen
+  warning against uploading real patient-identifiable data, and nothing
+  entered there is persisted to a shared entity — it exists only in that
+  browser session.
 - OncoBind does not diagnose disease, does not recommend a specific
   prescription, and is not a medical device.
