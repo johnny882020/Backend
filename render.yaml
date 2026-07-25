@@ -1,15 +1,8 @@
 services:
   - type: web
-    runtime: static
+    runtime: docker
     name: oncobind
     branch: claude/base44-create-3yhg90
-    buildCommand: npm ci && npm run build
-    staticPublishPath: ./dist
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
-    headers:
-      - path: /*
-        name: X-Frame-Options
-        value: DENY
+    dockerfilePath: ./Dockerfile
+    plan: free
+    healthCheckPath: /
