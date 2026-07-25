@@ -5,57 +5,44 @@ import { Input } from '@/components/ui/input';
 import { Sparkles, Send } from 'lucide-react';
 
 export function AdvisorChat({ scenario, drugs }) {
-  const [conversation, setConversation] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const unsubscribeRef = useRef(null);
+  const [error, setError] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
-    setConversation(null);
-    if (unsubscribeRef.current) unsubscribeRef.current();
-    return () => {
-      if (unsubscribeRef.current) unsubscribeRef.current();
-    };
+    setMessages([]);
+    setError(null);
   }, [scenario?.id]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [conversation?.messages?.length]);
-
-  const ensureConversation = async () => {
-    if (conversation) return conversation;
-    const conv = await base44.agents.createConversation({
-      agent_name: 'oncology_advisor',
-      metadata: { scenario_id: scenario.id, scenario_name: scenario.name },
-    });
-    unsubscribeRef.current = base44.agents.subscribeToConversation(conv.id, (updated) => {
-      setConversation(updated);
-    });
-    setConversation(conv);
-    return conv;
-  };
+  }, [messages.length]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     const text = input.trim();
     if (!text || isSending) return;
     setInput('');
+    setError(null);
+    const nextMessages = [...messages, { role: 'user', content: text }];
+    setMessages(nextMessages);
     setIsSending(true);
     try {
-      const conv = await ensureConversation();
-      const isFirstMessage = !conv.messages || conv.messages.length === 0;
-      const drugList = drugs.map((d) => d.name).join(', ');
-      const content = isFirstMessage
-        ? `Scenario: "${scenario.name}" (${scenario.cancer_type}). Target: ${scenario.target_name} (PDB ${scenario.target_pdb_id}). Candidate drugs: ${drugList}.\n\nQuestion: ${text}`
-        : text;
-      await base44.agents.addMessage(conv, { role: 'user', content });
+      const res = await base44.functions.invoke('oncology-chat', {
+        scenarioId: scenario.id,
+        question: text,
+        history: messages,
+      });
+      setMessages([...nextMessages, { role: 'assistant', content: res.data.answer }]);
+    } catch (err) {
+      const message = err?.response?.data?.error || err?.message || 'Something went wrong.';
+      setError(message);
     } finally {
       setIsSending(false);
     }
   };
-
-  const messages = conversation?.messages?.filter((m) => !m.hidden) ?? [];
 
   return (
     <div className="flex flex-col h-full">
@@ -64,27 +51,32 @@ export function AdvisorChat({ scenario, drugs }) {
         <h3 className="text-sm font-semibold text-slate-900">Oncology Advisor</h3>
       </div>
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 min-h-[220px]">
-        {messages.length === 0 && (
+        {messages.length === 0 && !error && (
           <p className="text-sm text-slate-400">
             Ask about mechanism of action, binding predictions, or adverse-effect tradeoffs
-            for {scenario.name}.
+            for {scenario.name}. No sign-in required.
           </p>
         )}
-        {messages.map((m) => (
+        {messages.map((m, i) => (
           <div
-            key={m.id}
+            key={i}
             className={`text-sm rounded-xl px-3 py-2 max-w-[90%] whitespace-pre-wrap ${
               m.role === 'user'
                 ? 'ml-auto bg-slate-900 text-white'
                 : 'bg-slate-100 text-slate-800'
             }`}
           >
-            {typeof m.content === 'string' ? m.content : JSON.stringify(m.content)}
+            {m.content}
           </div>
         ))}
         {isSending && (
           <div className="bg-slate-100 text-slate-400 text-sm rounded-xl px-3 py-2 max-w-[90%]">
             Thinking&hellip;
+          </div>
+        )}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl px-3 py-2">
+            {error}
           </div>
         )}
         <div ref={bottomRef} />
