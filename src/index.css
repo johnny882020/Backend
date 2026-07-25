@@ -38,3 +38,29 @@
     @apply font-display;
   }
 }
+
+/* Print only the decision report (see DecisionReport.jsx's "Print / Save as
+   PDF" button) — hide everything else on the page while printing. */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #decision-report-print,
+  #decision-report-print * {
+    visibility: visible;
+  }
+  #decision-report-print {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    padding: 24px;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+  .print\:block {
+    display: block !important;
+  }
+}
+

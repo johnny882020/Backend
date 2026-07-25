@@ -7,15 +7,19 @@ import { DrugDetail } from '@/components/DrugDetail';
 import { AdvisorChat } from '@/components/AdvisorChat';
 import { DisclaimerBanner } from '@/components/DisclaimerBanner';
 import { CandidateDrugForm } from '@/components/CandidateDrugForm';
+import { PatientContextPanel } from '@/components/PatientContextPanel';
+import { DecisionReport } from '@/components/DecisionReport';
 
 export function ScenarioDetail({ scenario, onBack }) {
   const [drugs, setDrugs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedDrugId, setSelectedDrugId] = useState(null);
+  const [activeFlags, setActiveFlags] = useState([]);
 
   useEffect(() => {
     setIsLoading(true);
     setSelectedDrugId(null);
+    setActiveFlags([]);
     base44.entities.Drug.filter({ scenario_id: scenario.id }).then((data) => {
       setDrugs(data);
       setSelectedDrugId(data[0]?.id ?? null);
@@ -34,12 +38,12 @@ export function ScenarioDetail({ scenario, onBack }) {
     <div className="space-y-5">
       <button
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors"
+        className="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition-colors print:hidden"
       >
         <ArrowLeft className="w-4 h-4" /> All scenarios
       </button>
 
-      <div>
+      <div className="print:hidden">
         <div className="text-xs font-medium uppercase tracking-wide text-brand-teal">
           {scenario.cancer_type}
         </div>
@@ -47,7 +51,7 @@ export function ScenarioDetail({ scenario, onBack }) {
         <p className="text-sm text-slate-500 mt-1">{scenario.mutation_context}</p>
       </div>
 
-      <Card className="p-5">
+      <Card className="p-5 print:hidden">
         <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
           {scenario.target_name} &middot; PDB {scenario.target_pdb_id} &middot; UniProt {scenario.target_uniprot_id}
         </h4>
@@ -57,18 +61,28 @@ export function ScenarioDetail({ scenario, onBack }) {
       {isLoading ? (
         <div className="h-40 rounded-2xl bg-slate-100 animate-pulse" />
       ) : (
-        <div className="grid lg:grid-cols-3 gap-5 items-start">
+        <div className="grid lg:grid-cols-3 gap-5 items-start print:hidden">
           <div className="lg:col-span-2 space-y-5">
-            <DrugComparisonTable drugs={drugs} selectedDrugId={selectedDrugId} onSelect={setSelectedDrugId} />
+            <PatientContextPanel activeFlags={activeFlags} onChange={setActiveFlags} />
+            <DrugComparisonTable
+              drugs={drugs}
+              selectedDrugId={selectedDrugId}
+              onSelect={setSelectedDrugId}
+              activeFlags={activeFlags}
+            />
             <CandidateDrugForm scenario={scenario} onAdded={handleCandidateAdded} />
             {selectedDrug && (
-              <DrugDetail drug={selectedDrug} scenario={scenario} scenarioDrugs={drugs} />
+              <DrugDetail drug={selectedDrug} scenario={scenario} scenarioDrugs={drugs} activeFlags={activeFlags} />
             )}
           </div>
           <Card className="lg:sticky lg:top-6 h-[560px]">
             <AdvisorChat scenario={scenario} drugs={drugs} />
           </Card>
         </div>
+      )}
+
+      {!isLoading && (
+        <DecisionReport scenario={scenario} drugs={drugs} activeFlags={activeFlags} />
       )}
 
       <DisclaimerBanner compact />

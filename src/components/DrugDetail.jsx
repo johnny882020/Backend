@@ -3,12 +3,14 @@ import { Card } from '@/components/ui/card';
 import { MoleculeViewer } from '@/components/MoleculeViewer';
 import { ScoreBar } from '@/components/ui/score-bar';
 import { computeScoreBreakdown } from '@/lib/scoring';
-import { AlertTriangle } from 'lucide-react';
+import { adjustForPatientContext } from '@/lib/patientContext';
+import { AlertTriangle, User } from 'lucide-react';
 
 const SEVERITY_VARIANT = { common: 'default', serious: 'amber', black_box: 'red' };
 
-export function DrugDetail({ drug, scenario, scenarioDrugs = [] }) {
+export function DrugDetail({ drug, scenario, scenarioDrugs = [], activeFlags = [] }) {
   const breakdown = computeScoreBreakdown(drug, scenarioDrugs);
+  const adjustment = activeFlags.length > 0 ? adjustForPatientContext(drug, activeFlags) : null;
 
   return (
     <Card className="overflow-hidden">
@@ -80,6 +82,31 @@ export function DrugDetail({ drug, scenario, scenarioDrugs = [] }) {
                 <div className="text-[11px] text-slate-400">Composite</div>
                 <div className="text-sm font-mono text-slate-800">{drug.composite_score?.toFixed(0) ?? '—'}</div>
               </div>
+            </div>
+          )}
+
+          {adjustment && (
+            <div className="mt-4 rounded-lg border border-brand-teal/20 bg-brand-tealLight/30 px-3 py-2.5">
+              <div className="flex items-center gap-1.5 text-xs font-semibold text-brand-ink">
+                <User className="w-3.5 h-3.5 text-brand-teal" />
+                Patient-adjusted: {drug.composite_score} &rarr; {adjustment.adjustedScore}{' '}
+                <span className={adjustment.adjustedScore >= drug.composite_score ? 'text-emerald-600' : 'text-red-500'}>
+                  ({adjustment.adjustedScore >= drug.composite_score ? '+' : ''}{adjustment.adjustedScore - drug.composite_score})
+                </span>
+              </div>
+              {adjustment.matchedFlags.length > 0 ? (
+                <ul className="mt-1.5 text-xs text-slate-600 space-y-0.5">
+                  {adjustment.matchedFlags.map(({ flag, matchedEffects }, i) => (
+                    <li key={i}>
+                      &bull; {flag.label}: {flag.kind === 'penalty'
+                        ? `matches ${matchedEffects.map((ae) => ae.effect).join(', ')}`
+                        : 'relevant to this mechanism'}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-1 text-xs text-slate-500">No flagged factors matched this drug's known effects/mechanism.</p>
+              )}
             </div>
           )}
 

@@ -1,4 +1,5 @@
 import { Badge } from '@/components/ui/badge';
+import { adjustForPatientContext } from '@/lib/patientContext';
 
 const SEVERITY_VARIANT = { common: 'default', serious: 'amber', black_box: 'red' };
 
@@ -9,7 +10,8 @@ function ScoreCell({ value, decimals = 2 }) {
   return <span className="font-mono text-sm text-slate-800">{value.toFixed(decimals)}</span>;
 }
 
-function CompositeCell({ value, isCandidate }) {
+function CompositeCell({ drug, isCandidate, activeFlags }) {
+  const value = drug.composite_score;
   if (value === null || value === undefined) {
     return (
       <span className="text-slate-300 text-xs" title={isCandidate ? 'No curated adverse-effect data to weigh safety — not scored' : undefined}>
@@ -17,21 +19,32 @@ function CompositeCell({ value, isCandidate }) {
       </span>
     );
   }
+  const adjustment = activeFlags?.length > 0 ? adjustForPatientContext(drug, activeFlags) : null;
+  const displayValue = adjustment ? adjustment.adjustedScore : value;
   return (
-    <div className="flex items-center gap-2 min-w-[92px]">
+    <div className="flex items-center gap-2 min-w-[110px]">
       <div className="h-1.5 w-14 rounded-full bg-brand-tealLight overflow-hidden shrink-0">
         <div
           className="h-full rounded-full bg-gradient-to-r from-brand-teal to-brand-blue"
-          style={{ width: `${value}%` }}
+          style={{ width: `${displayValue}%` }}
         />
       </div>
-      <span className="font-mono text-sm text-slate-800">{value}</span>
+      <span className="font-mono text-sm text-slate-800">{displayValue}</span>
+      {adjustment && adjustment.adjustedScore !== value && (
+        <span className={`text-xs font-mono ${adjustment.adjustedScore > value ? 'text-emerald-600' : 'text-red-500'}`}>
+          ({adjustment.adjustedScore > value ? '+' : ''}{adjustment.adjustedScore - value})
+        </span>
+      )}
     </div>
   );
 }
 
-export function DrugComparisonTable({ drugs, selectedDrugId, onSelect }) {
-  const sorted = [...drugs].sort((a, b) => (b.composite_score ?? -1) - (a.composite_score ?? -1));
+export function DrugComparisonTable({ drugs, selectedDrugId, onSelect, activeFlags = [] }) {
+  const sorted = [...drugs].sort((a, b) => {
+    const scoreA = activeFlags.length > 0 ? adjustForPatientContext(a, activeFlags)?.adjustedScore ?? a.composite_score : a.composite_score;
+    const scoreB = activeFlags.length > 0 ? adjustForPatientContext(b, activeFlags)?.adjustedScore ?? b.composite_score : b.composite_score;
+    return (scoreB ?? -1) - (scoreA ?? -1);
+  });
 
   return (
     <div className="overflow-x-auto rounded-xl border border-slate-200">
@@ -42,7 +55,9 @@ export function DrugComparisonTable({ drugs, selectedDrugId, onSelect }) {
             <th className="text-left font-medium px-4 py-2.5">Class</th>
             <th className="text-left font-medium px-4 py-2.5">Docking conf.</th>
             <th className="text-left font-medium px-4 py-2.5">pIC50</th>
-            <th className="text-left font-medium px-4 py-2.5">Composite score</th>
+            <th className="text-left font-medium px-4 py-2.5">
+              {activeFlags.length > 0 ? 'Patient-adjusted score' : 'Composite score'}
+            </th>
             <th className="text-left font-medium px-4 py-2.5">Key adverse effects</th>
           </tr>
         </thead>
@@ -65,7 +80,7 @@ export function DrugComparisonTable({ drugs, selectedDrugId, onSelect }) {
               <td className="px-4 py-3 text-slate-600">{drug.drug_class}</td>
               <td className="px-4 py-3"><ScoreCell value={drug.docking_confidence} /></td>
               <td className="px-4 py-3"><ScoreCell value={drug.affinity_pic50} /></td>
-              <td className="px-4 py-3"><CompositeCell value={drug.composite_score} isCandidate={drug.is_candidate} /></td>
+              <td className="px-4 py-3"><CompositeCell drug={drug} isCandidate={drug.is_candidate} activeFlags={activeFlags} /></td>
               <td className="px-4 py-3">
                 <div className="flex flex-wrap gap-1">
                   {drug.is_candidate ? (
